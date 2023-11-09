@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Adds a lot new settings to the game https://rocketer.glitch.me/, including CRGTs (Custom Rocketer Game Themes) for the game.
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
+// @license      DISTRIBUTION
 // ==/UserScript==
 
 (function() {
@@ -122,7 +123,29 @@
 
     playershapediv.appendChild(playershapeselect);
 
+    setTimeout(function() {
 
+    let changelogDisplayElement = document.getElementById('changelogDisplay');
+    changelogDisplayElement.appendChild(document.createElement('br'));
+    changelogDisplayElement.appendChild(document.createElement('br'));
+    let rucspan = document.createElement('span');
+    rucspan.id = 'rocketer-utils-changelog';
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.1 - 8 November 2023');
+    rucspan.style.color = 'orange';
+    rucspan.appendChild(ruc);
+    let rucp = document.createElement('p');
+    function cct(text, br) {
+        rucp.appendChild(document.createTextNode(text));
+        if (br) {
+            rucp.appendChild(document.createElement('br'));
+        };
+    };
+    cct('- FEATURE: added changelog', true);
+    cct('- BUGFIX: fixed the walls being invisible in the new update', false);
+    rucspan.appendChild(rucp);
+    changelogDisplayElement.appendChild(rucspan);
+
+    }, 200);
 
     function newdrawplayer(canvas, object, fov, spawnProtect, playercolor, playeroutline, eternal, objectangle){//only barrels and body (no heath bars, names, and chats)
     //objectangle refers to angle rotated before triggering this function
@@ -3198,8 +3221,8 @@
       ctx.fillRect(
         drawingX,
         drawingY,
-        object.width / clientFovMultiplier,
-        object.width / clientFovMultiplier
+        object.w / clientFovMultiplier,
+        object.h / clientFovMultiplier
       );
       if (showHitBox == "yes") {
         //draw hitbox
@@ -3208,8 +3231,8 @@
         ctx.strokeRect(
           drawingX,
           drawingY,
-          object.width / clientFovMultiplier,
-          object.width / clientFovMultiplier
+          object.w / clientFovMultiplier,
+          object.h / clientFovMultiplier
         );
       }
     } else if (object.type == "def") {
