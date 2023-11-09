@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.1.1
 // @description  Adds a lot new settings to the game https://rocketer.glitch.me/, including CRGTs (Custom Rocketer Game Themes) for the game.
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
@@ -130,7 +130,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.1 - 8 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.1.1 - 9 November 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
@@ -140,8 +140,7 @@
             rucp.appendChild(document.createElement('br'));
         };
     };
-    cct('- FEATURE: added changelog', true);
-    cct('- BUGFIX: fixed the walls being invisible in the new update', false);
+    cct('- BUGFIX: made the new gates actually visible', false);
     rucspan.appendChild(rucp);
     changelogDisplayElement.appendChild(rucspan);
 
@@ -3234,6 +3233,101 @@
           object.w / clientFovMultiplier,
           object.h / clientFovMultiplier
         );
+      }
+    } else if (object.type == "gate") {
+      //ctx.fillStyle = "#232323";
+      ctx.save();
+      ctx.translate(drawingX, drawingY);
+      ctx.rotate(object.angle/180*Math.PI);
+      //draw white rectangle below
+      ctx.fillStyle = "rgba(255,255,255,.7)";
+      ctx.strokeStyle = "white";
+      //FIRST WHITE RECTANGLE
+      ctx.globalAlpha = 1.0 * (endGate - gateTimer) / (endGate - 1 - startGate);//gateTimer increases from 0.5 to 9, this equation makes the opacity decrease from 1 to 0
+      ctx.fillRect(
+        -(object.height / clientFovMultiplier * gateTimer)/2 + object.height / clientFovMultiplier/2,
+         -object.width/2/clientFovMultiplier,
+        object.height / clientFovMultiplier * gateTimer,
+        object.width / clientFovMultiplier
+      );
+      ctx.strokeRect(
+        -(object.height / clientFovMultiplier * gateTimer)/2 + object.height / clientFovMultiplier/2,
+         -object.width/2/clientFovMultiplier,
+        object.height / clientFovMultiplier * gateTimer,
+        object.width / clientFovMultiplier
+      );
+      ctx.globalAlpha = 1.0;
+      //SECOND WHITE RECTANGLE
+      let gateTimer2 = gateTimer - endGate/2;
+      if (gateTimer2 < startGate){
+        gateTimer2 = endGate - (startGate - gateTimer2)
+      }
+      ctx.globalAlpha = 1.0 * (endGate - gateTimer2) / (endGate - 1 - startGate);//gateTimer increases from 1 to 7, this equation makes the opacity decrease from 1 to 0
+      ctx.fillRect(
+        -(object.height / clientFovMultiplier * gateTimer2)/2 + object.height / clientFovMultiplier/2,
+         -object.width/2/clientFovMultiplier,
+        object.height / clientFovMultiplier * gateTimer2,
+        object.width / clientFovMultiplier
+      );
+      ctx.strokeRect(
+        -(object.height / clientFovMultiplier * gateTimer2)/2 + object.height / clientFovMultiplier/2,
+         -object.width/2/clientFovMultiplier,
+        object.height / clientFovMultiplier * gateTimer2,
+        object.width / clientFovMultiplier
+      );
+      ctx.globalAlpha = 1.0;
+      //draw actual black gate
+      ctx.fillStyle = "black";
+      ctx.fillRect(0,
+         -object.width/2/clientFovMultiplier,
+        object.height / clientFovMultiplier,
+        object.width / clientFovMultiplier
+      );
+      if (showHitBox == "yes") {
+        //draw hitbox
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 3;
+        ctx.strokeRect(0,
+         -object.width/2/clientFovMultiplier,
+          object.height / clientFovMultiplier,
+          object.width / clientFovMultiplier
+        );
+      }
+      ctx.restore();
+      //spawn particles
+      var choosing = Math.floor(Math.random() * 3); //choose if particle spawn. Lower number means more particles
+      if (choosing == 1) {
+        var dir = Math.floor(Math.random() * 2); //choose angle in degrees
+        if (dir == 0){
+          var angleRadians = (object.angle) * Math.PI / 180; //convert to radians
+        }
+        else{
+          var angleRadians = (object.angle - 180) * Math.PI / 180;
+        }
+        let randX = 0;
+        let randY = 0;
+        //code currently does not support particles for gates that are tilted
+        //i dont see a need to add that in the near future
+        if (object.angle == 0 || object.angle == 180 || object.angle == 360){
+          randY = Math.floor(Math.random() * object.width) - object.width/2;
+        }
+        else if (object.angle == 90 || object.angle == 270){
+          randX = Math.floor(Math.random() * object.width) - object.width/2;
+        }
+        portalparticles[particleID] = {
+          angle: angleRadians,
+          x: object.x + randX,
+          y: object.y + randY,
+          width: 50,
+          height: 50,
+          speed: 10,
+          timer: 30,
+          maxtimer: 15, //difference between timer and maxtimer is the opacity change of the particle. Larger difference means more or less transparent
+          color: "white",
+          outline: "lightgrey",
+          type: "particle",
+        };
+        particleID++;
       }
     } else if (object.type == "def") {
       //base defender in 2tdm
