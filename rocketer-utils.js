@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
-// @description  Adds a lot new settings to the game https://rocketer.glitch.me/, including CRGTs (Custom Rocketer Game Themes) for the game.
+// @version      1.2
+// @description  Adds a lot new settings to the game https://rocketer.glitch.me/
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
@@ -20,12 +20,12 @@
 
     var whitetheme = document.createElement('option');
     whitetheme.value = 'whitetheme';
-    whitetheme.textContent = 'White [CRGT]';
+    whitetheme.textContent = 'White';
     themes.appendChild(whitetheme);
 
     var simplistic = document.createElement('option');
     simplistic.value = 'simplistic';
-    simplistic.textContent = 'Simplistic [CRGT]';
+    simplistic.textContent = 'Simplistic';
     themes.appendChild(simplistic);
 
     for (let i = 3; i < 15; i++) {
@@ -57,6 +57,10 @@
     function toggleAura() {
         aurastate = !aurastate
     };
+    var autorespawn = false;
+    function toggleAutoRespawn() {
+        autorespawn = !autorespawn
+    };
 
     var chattoggle = document.createElement('label');
     chattoggle.className = 'switch';
@@ -80,6 +84,17 @@
     auratoggle.appendChild(ati);
     auratoggle.appendChild(ats);
 
+    var respawntoggle = document.createElement('label');
+    respawntoggle.className = 'switch';
+    var rti = document.createElement('input');
+    rti.type = 'checkbox';
+    rti.checked = false;
+    rti.onclick = toggleAutoRespawn;
+    var rts = document.createElement('span');
+    rts.className = 'slider round';
+    respawntoggle.appendChild(rti);
+    respawntoggle.appendChild(rts);
+
     var utilities = document.createElement('span');
     utilities.style = 'font-weight: 700; font-size: 25px;';
     utilities.textContent = 'Rocketer Utilities';
@@ -94,6 +109,10 @@
     settings.appendChild(document.createElement('br'));
     settings.appendChild(document.createTextNode("Invisible auras "));
     settings.appendChild(auratoggle);
+    settings.appendChild(document.createElement('br'));
+    settings.appendChild(document.createElement('br'));
+    settings.appendChild(document.createTextNode("Auto-respawn "));
+    settings.appendChild(respawntoggle);
 
     var playershapediv = document.createElement('div');
     playershapediv.appendChild(document.createElement('br'));
@@ -130,7 +149,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.1.1 - 9 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.2 - 24 November 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
@@ -140,18 +159,21 @@
             rucp.appendChild(document.createElement('br'));
         };
     };
-    cct('- BUGFIX: made the new gates actually visible', false);
+    cct('- EDIT: White [CRGT] and Simplistic [CRGT] renamed to White and Simplistic', true);
+    cct('- FEATURE: Completely overhauled Simplistic theme', true);
+    cct('- FEATURE: Added auto-respawn option', true);
     rucspan.appendChild(rucp);
     changelogDisplayElement.appendChild(rucspan);
 
     }, 200);
 
     function newdrawplayer(canvas, object, fov, spawnProtect, playercolor, playeroutline, eternal, objectangle){//only barrels and body (no heath bars, names, and chats)
+    const CRTP = document.getElementById('theme').value;
     //objectangle refers to angle rotated before triggering this function
     //fov is clientFovMultiplier for ctx, hctx is 1
       canvas.lineJoin = "round"; //make nice round corners
       //draw assets below body, e.g. rammer body base
-      for (assetID in object.assets){
+      for (let assetID in object.assets){
         var asset = object.assets[assetID];
         if (asset.type == "under") {
           if (('angle' in asset) && asset.angle != 0) {
@@ -168,7 +190,9 @@
             canvas.beginPath();
             canvas.arc(0, 0, (object.width / fov) * asset.size, 0, 2 * Math.PI);
             canvas.fill();
+            if (CRTP != 'simplistic') {
             canvas.stroke();
+            };
           } else {
             canvas.beginPath();
             let baseSides = asset.sides;
@@ -177,7 +201,9 @@
               canvas.lineTo((object.width / fov) * asset.size * Math.cos((i * 2 * Math.PI) / baseSides), (object.width / fov) * asset.size * Math.sin((i * 2 * Math.PI) / baseSides));
             }
             canvas.fill();
+            if (CRTP != 'simplistic') {
             canvas.stroke();
+            };
           }
           canvas.translate(
             (-object.width / fov) * asset.x,
@@ -192,7 +218,7 @@
       //draw barrel
       canvas.lineWidth = 4 / fov;
       //weapon barrels
-      for (barrel in object.barrels){
+      for (let barrel in object.barrels){
         let thisBarrel = object.barrels[barrel];
         canvas.rotate((thisBarrel.additionalAngle * Math.PI) / 180); //rotate to barrel angle
         canvas.fillStyle = bodyColors.barrel.col;
@@ -231,27 +257,12 @@
       canvas.strokeStyle = playeroutline;
       if (eternal == "no") {
         //not a tier 6 tank
-        let plshp = document.getElementById('player-shape-select').value;
-        if (plshp == 'circle') {
-            canvas.beginPath();
-            canvas.arc(0, 0, object.width / fov, 0, 2 * Math.PI);
-            canvas.fill();
+        canvas.beginPath();
+        canvas.arc(0, 0, object.width / fov, 0, 2 * Math.PI);
+        canvas.fill();
+        if (CRTP != 'simplistic') {
             canvas.stroke();
-        } else {
-            canvas.beginPath();
-            let baseSides = 6;
-            if (plshp == 'square') {
-                baseSides = 4;
-            } else if (plshp == 'triangle') {
-                baseSides = 3;
-            };
-            canvas.moveTo((object.width / fov), 0);
-            for (var i = 1; i <= baseSides; i++) {
-                canvas.lineTo((object.width / fov) * Math.cos((i * 2 * Math.PI) / baseSides), (object.width / fov) * Math.sin((i * 2 * Math.PI) / baseSides));
-            }
-            canvas.fill();
-            canvas.stroke();
-        }
+        };
       } else {
         //if a tier 6 tank
         canvas.beginPath();
@@ -261,11 +272,13 @@
           canvas.lineTo((object.width / fov) * Math.cos((i * 2 * Math.PI) / baseSides), (object.width / fov) * Math.sin((i * 2 * Math.PI) / baseSides));
         }
         canvas.fill();
-        canvas.stroke();
+        if (CRTP != 'simplistic') {
+            canvas.stroke();
+        };
       }
 
       //barrels in body upgrade
-      for (var barrel in object.bodybarrels){
+      for (let barrel in object.bodybarrels){
         let thisBarrel = object.bodybarrels[barrel];
         canvas.rotate(thisBarrel.additionalAngle - objectangle); //rotate to barrel angle
         canvas.fillStyle = bodyColors.barrel.col;
@@ -304,11 +317,13 @@
         canvas.beginPath();
         canvas.arc(0, 0, (object.width / clientFovMultiplier) * object.turretBaseSize, 0, 2 * Math.PI);
         canvas.fill();
-        canvas.stroke();
+        if (CRTP != 'simplistic') {
+            canvas.stroke();
+        };
       }
 
       //draw assets above body, e.g. aura assets
-      for (assetID in object.assets){
+      for (let assetID in object.assets){
         var asset = object.assets[assetID];
         if (asset.type == "above") {
           if (('angle' in asset) && asset.angle != 0) {
@@ -325,7 +340,9 @@
             canvas.beginPath();
             canvas.arc(0, 0, (object.width / fov) * asset.size, 0, 2 * Math.PI);
             canvas.fill();
-            canvas.stroke();
+            if (CRTP != 'simplistic') {
+                canvas.stroke();
+            };
           } else {
             canvas.beginPath();
             let baseSides = asset.sides;
@@ -334,7 +351,9 @@
               canvas.lineTo((object.width / fov) * asset.size * Math.cos((i * 2 * Math.PI) / baseSides), (object.width / fov) * asset.size * Math.sin((i * 2 * Math.PI) / baseSides));
             }
             canvas.fill();
-            canvas.stroke();
+            if (CRTP != 'simplistic') {
+                canvas.stroke();
+            };
           }
           canvas.translate(
             (-object.width / fov) * asset.x,
@@ -347,9 +366,9 @@
       }
 
       canvas.lineJoin = "miter"; //change back
-  }
-    newdrawplayer = drawPlayer;
+  };
     function newdraw(object, id, playerstring, auraWidth) {
+    const CRTP = document.getElementById('theme').value;
     //function for drawing objects on the canvas. need to provide aura width because this fuction cannot access variables outside
     var drawingX =
       (object.x - px) / clientFovMultiplier + canvas.width / 2; //calculate the location on canvas to draw object
@@ -381,7 +400,7 @@
       }
       if (object.bulletType == "aura") {
         var choosing;
-        if (aurastate) {
+        if (aurastate && CRTP != 'simplistic') {
         choosing = Math.floor(Math.random() * 2); //choose if particle spawn
         } else {
         choosing = 0;
@@ -467,7 +486,11 @@
           if (aurastate || object.bulletType != "aura") {
           ctx.fill();
           };
+          if (object.bulletType == 'aura') {
           ctx.stroke();
+          } else if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         }
         else{//8 sides for healing aura
           ctx.beginPath();
@@ -483,7 +506,9 @@
            if (aurastate || object.bulletType != "aura") {
           ctx.fill();
            };
+          if (CRTP != 'simplistic') {
           ctx.stroke();
+          };
         }
       } else if (object.bulletType == "trap") {
         //width is the radius, so need to times two to get total width
@@ -494,12 +519,14 @@
           (object.width * 2) / clientFovMultiplier,
           (object.width * 2) / clientFovMultiplier
         );
+          if (CRTP != 'simplistic') {
         ctx.strokeRect(
           drawingX - object.width / clientFovMultiplier,
           drawingY - object.width / clientFovMultiplier,
           (object.width * 2) / clientFovMultiplier,
           (object.width * 2) / clientFovMultiplier
         );
+          };
       } else if (object.bulletType == "drone") {
         ctx.save();
         ctx.translate(drawingX, drawingY);
@@ -519,7 +546,9 @@
           );
         }
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
       } else if (object.bulletType == "mine" || object.bulletType == "minion") {
         //console.log(object.moveAngle/Math.PI*180)
@@ -548,6 +577,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x,
@@ -557,6 +587,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            };
           }
           //drone barrel
           else if (thisBarrel.barrelType == "drone") {
@@ -584,7 +615,9 @@
               0
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //trap barrel
           else if (thisBarrel.barrelType == "trap") {
@@ -604,6 +637,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -620,6 +654,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -654,7 +689,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //mine barrel
           else if (thisBarrel.barrelType == "mine") {
@@ -674,6 +711,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -690,6 +728,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -724,7 +763,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
         //minion barrel
         else if (thisBarrel.barrelType == "minion") {
@@ -737,6 +778,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -746,6 +788,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -753,6 +796,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+           if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -760,6 +804,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+           };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -767,6 +812,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5/ clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -774,6 +820,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5 /clientFovMultiplier
           );
+          };
         }
           })
           ctx.fillStyle = prevfill;
@@ -798,7 +845,9 @@
           ctx.arc(0, 0, object.width / clientFovMultiplier, 0, 2 * Math.PI);
         }
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.rotate(-object.moveAngle); //rotate back
         //BARREL FOR THE MINE TRAP
         if (object.bulletType == "mine"){
@@ -817,6 +866,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x,
@@ -826,6 +876,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            };
           }
           //drone barrel
           else if (thisBarrel.barrelType == "drone") {
@@ -853,7 +904,9 @@
               0
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //trap barrel
           else if (thisBarrel.barrelType == "trap") {
@@ -873,6 +926,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -889,6 +943,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -923,7 +978,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //mine barrel
           else if (thisBarrel.barrelType == "mine") {
@@ -943,6 +1000,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -959,6 +1017,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -993,7 +1052,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
         //minion barrel
         else if (thisBarrel.barrelType == "minion") {
@@ -1006,6 +1067,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1015,6 +1077,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1022,6 +1085,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1029,6 +1093,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+          };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1036,6 +1101,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5/ clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1043,6 +1109,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5 /clientFovMultiplier
           );
+          };
         }
           ctx.beginPath();
           ctx.arc(
@@ -1053,7 +1120,9 @@
             2 * Math.PI
           );
           ctx.fill();
+          if (CRTP != 'simplistic') {
           ctx.stroke();
+          };
           ctx.rotate(-thisBarrel.additionalAngle); //rotate back
         });
       }
@@ -1106,6 +1175,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x,
@@ -1115,6 +1185,7 @@
               (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                 clientFovMultiplier
             );
+            };
           }
           //drone barrel
           else if (thisBarrel.barrelType == "drone") {
@@ -1142,7 +1213,9 @@
               0
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //trap barrel
           else if (thisBarrel.barrelType == "trap") {
@@ -1159,6 +1232,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -1172,6 +1246,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -1202,7 +1277,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           //mine barrel
           else if (thisBarrel.barrelType == "mine") {
@@ -1219,6 +1296,7 @@
                 2) /
                 clientFovMultiplier
             );
+            if (CRTP != 'simplistic') {
             ctx.strokeRect(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                 thisBarrel.x / clientFovMultiplier,
@@ -1232,6 +1310,7 @@
                 2) /
                 clientFovMultiplier
             );
+            };
             ctx.beginPath();
             ctx.moveTo(
               -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
@@ -1262,7 +1341,9 @@
                 clientFovMultiplier
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
         //minion barrel
         else if (thisBarrel.barrelType == "minion") {
@@ -1275,6 +1356,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1284,6 +1366,7 @@
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
               clientFovMultiplier
           );
+          };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1291,6 +1374,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1298,6 +1382,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) / 1.5 / clientFovMultiplier
           );
+          };
           ctx.fillRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1305,6 +1390,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5/ clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             (-thisBarrel.barrelWidth * 1.5) / 2 / clientFovMultiplier +
               thisBarrel.x / clientFovMultiplier,
@@ -1312,6 +1398,7 @@
             (thisBarrel.barrelWidth / clientFovMultiplier) * 1.5,
             (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /5 /clientFovMultiplier
           );
+          };
         }
           ctx.rotate((-(thisBarrel.additionalAngle + 90) * Math.PI) / 180); //rotate back
         });
@@ -1346,7 +1433,9 @@
             0
           );
           ctx.fill();
+          if (CRTP != 'simplistic') {
           ctx.stroke();
+          };
         }
         ctx.restore();
       }
@@ -1367,12 +1456,14 @@
             barrelwidth / clientFovMultiplier,
             barrelheight / clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             -barrelwidth / 2 / clientFovMultiplier,
             -barrelheight / clientFovMultiplier,
             barrelwidth / clientFovMultiplier,
             barrelheight / clientFovMultiplier
           );
+          };
         }
         ctx.restore();
         ctx.save();
@@ -1389,12 +1480,14 @@
             barrelwidth / clientFovMultiplier,
             barrelheight * 0.5 / clientFovMultiplier
           );
+          if (CRTP != 'simplistic') {
           ctx.strokeRect(
             -barrelwidth / 2 / clientFovMultiplier,
             -barrelheight * 0.55 / clientFovMultiplier,
             barrelwidth / clientFovMultiplier,
             barrelheight * 0.5 / clientFovMultiplier
           );
+          };
           ctx.beginPath();
           ctx.moveTo(
             -barrelwidth / 2 / clientFovMultiplier,
@@ -1413,7 +1506,9 @@
             -barrelheight * 0.55 / clientFovMultiplier
           );
           ctx.fill();
+          if (CRTP != 'simplistic') {
           ctx.stroke();
+          };
         }
         ctx.restore();
       }
@@ -1444,7 +1539,9 @@
         ctx.lineTo(0, 0 - outerRadius);
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
       }
       var chooseflash = 3;
@@ -1504,7 +1601,9 @@
             );
           }
           ctx.fill();
+          if (CRTP != 'simplistic') {
           ctx.stroke();
+          };
           if (object.name=="Cluster"||object.name=="Pursuer"){
             ctx.rotate(-Math.PI/object.side);//rotate back
             //draw circle on top
@@ -1513,7 +1612,9 @@
             ctx.beginPath();
             ctx.arc(0, 0, object.width/2 / clientFovMultiplier, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           else if (object.name=="Champion"){
             ctx.rotate(-Math.PI/object.side);//rotate back
@@ -1523,7 +1624,9 @@
             ctx.beginPath();
             ctx.arc(0, 0, object.width/2.5 / clientFovMultiplier, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           else if (object.name=="Infestor"){
             ctx.rotate(-Math.PI/object.side);//rotate back
@@ -1533,7 +1636,9 @@
             ctx.beginPath();
             ctx.arc(0, 0, object.width/5 / clientFovMultiplier, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           else if (object.name=="Leech"){
             //draw circle on top
@@ -1542,7 +1647,9 @@
             ctx.beginPath();
             ctx.arc(0, 0, object.width/2 / clientFovMultiplier, 0, 2 * Math.PI);
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
           }
           else if (object.name=="Pillbox"){//pillbox's barrel is visually a turret
             ctx.lineJoin = "round"; //make nice round corners
@@ -1561,6 +1668,7 @@
                 (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                   clientFovMultiplier
               );
+              if (CRTP != 'simplistic') {
               ctx.strokeRect(
                 -thisBarrel.barrelWidth / 2 / clientFovMultiplier +
                   thisBarrel.x,
@@ -1570,6 +1678,7 @@
                 (thisBarrel.barrelHeight - thisBarrel.barrelHeightChange) /
                   clientFovMultiplier
               );
+              };
             });
             ctx.rotate(-90 * Math.PI / 180);
             //draw turret base
@@ -1582,7 +1691,9 @@
               2 * Math.PI
             );
             ctx.fill();
-            ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
             ctx.lineJoin = "miter"; //change back
           }
         }
@@ -1610,7 +1721,9 @@
         ctx.lineTo(0, 0 - outerRadius);
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       }
       ctx.restore();
       if (object.health < object.maxhealth) {
@@ -2287,7 +2400,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.color;
       ctx.strokeStyle = object.outline;
       ctx.beginPath();
@@ -2306,7 +2421,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.baseColor;
       ctx.strokeStyle = object.baseOutline;
       ctx.beginPath();
@@ -2325,7 +2442,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.color;
       ctx.strokeStyle = object.outline;
       ctx.lineWidth = 4 / clientFovMultiplier;
@@ -2345,7 +2464,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.baseColor;
       ctx.strokeStyle = object.baseOutline;
       ctx.beginPath();
@@ -2364,7 +2485,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.barrelColor;
       ctx.strokeStyle = object.barrelOutline;
       ctx.beginPath();
@@ -2383,7 +2506,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.color;
       ctx.strokeStyle = object.outline;
       ctx.lineWidth = 4 / clientFovMultiplier;
@@ -2403,7 +2528,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       //draw barrels
       ctx.fillStyle = object.barrelColor;
       ctx.strokeStyle = object.barrelOutline;
@@ -2451,7 +2578,9 @@
           -barrelheight3 / clientFovMultiplier
         );
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
         //rectangle
         ctx.save();
@@ -2466,12 +2595,14 @@
           barrelwidth2 / clientFovMultiplier,
           barrelheight2 / clientFovMultiplier
         );
+        if (CRTP != 'simplistic') {
         ctx.strokeRect(
           -barrelwidth2 / 2 / clientFovMultiplier,
           -barrelheight2 / clientFovMultiplier,
           barrelwidth2 / clientFovMultiplier,
           barrelheight2 / clientFovMultiplier
         );
+        };
         ctx.restore();
         //trapezium at the tip
         ctx.save();
@@ -2493,7 +2624,9 @@
         ctx.lineTo(barrelwidth / 2 / clientFovMultiplier, 0);
         ctx.lineTo(-barrelwidth / 2 / clientFovMultiplier, 0);
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
       }
 
@@ -3357,7 +3490,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
 
 
       //draw barrels
@@ -3413,7 +3548,9 @@
           -barrelheight3 / clientFovMultiplier
         );
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
         //rectangle
         ctx.save();
@@ -3428,12 +3565,14 @@
           barrelwidth2 / clientFovMultiplier,
           barrelheight2 / clientFovMultiplier
         );
+        if (CRTP != 'simplistic') {
         ctx.strokeRect(
           -barrelwidth2 / 2 / clientFovMultiplier,
           -barrelheight2 / clientFovMultiplier,
           barrelwidth2 / clientFovMultiplier,
           barrelheight2 / clientFovMultiplier
         );
+        };
         ctx.restore();
         //trapezium at the tip
         ctx.save();
@@ -3455,7 +3594,9 @@
         ctx.lineTo(barrelwidth / 2 / clientFovMultiplier, 0);
         ctx.lineTo(-barrelwidth / 2 / clientFovMultiplier, 0);
         ctx.fill();
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
         ctx.restore();
       }
 
@@ -3471,7 +3612,9 @@
         2 * Math.PI
       );
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       var octagonWidth = object.width/5*4;
       ctx.fillStyle = bodyColors.asset.col;
       ctx.strokeStyle = bodyColors.asset.outline;
@@ -3491,7 +3634,9 @@
         );
       }
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       ctx.fillStyle = object.color;
       ctx.strokeStyle = object.outline;
       ctx.beginPath();
@@ -3503,7 +3648,9 @@
         2 * Math.PI
       );
       ctx.fill();
-      ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
 
       ctx.lineJoin = "miter"; //change back
       ctx.restore();
@@ -3519,10 +3666,184 @@
           0,
           2 * Math.PI
         );
-        ctx.stroke();
+          if (CRTP != 'simplistic') {
+          ctx.stroke();
+          };
       }
     }
   };
+
+    function newbulletbarrel(canvas, x,width,height,shootChange, fov){//shootchange is change in barrel height when shooting
+    canvas.fillRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    };
+  };
+    function newdronebarrel(canvas, x,width,height,shootChange, fov){
+    canvas.beginPath();
+    canvas.moveTo(
+      -width / 2 / fov +
+        x / fov,
+      0
+    );
+    canvas.lineTo(
+      -width / fov +
+        x / fov,
+      -(height - shootChange) / fov
+    );
+    canvas.lineTo(
+      width / fov +
+        (x * 2) / fov,
+      -(height - shootChange) / fov
+    );
+    canvas.lineTo(
+      width / 2 / fov +
+        (x * 2) / fov,
+      0
+    );
+    canvas.fill();
+        if (document.getElementById('theme').value != 'simplistic') {
+    canvas.stroke();
+        };
+  };
+    function newtrapbarrel(canvas, x,width,height,shootChange, fov){
+    canvas.fillRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) * 0.67 / fov,
+      width / fov,
+      (height - shootChange) * 0.67 / fov
+    );
+            if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) * 0.67 / fov,
+      width / fov,
+      (height - shootChange) * 0.67 / fov
+    );
+            };
+    canvas.beginPath();
+    canvas.moveTo(
+      (x - width / 2) / fov,
+      -(height - shootChange) * 0.67 / fov
+    );
+    canvas.lineTo(
+      (x - width) / fov,
+      -(height - shootChange) / fov
+    );
+    canvas.lineTo(
+      (x + width) / fov,
+      -(height - shootChange) / fov
+    );
+    canvas.lineTo(
+      (x + width / 2) / fov,
+      -(height - shootChange) * 0.67 / fov
+    );
+    canvas.fill();
+        if (document.getElementById('theme').value != 'simplistic') {
+    canvas.stroke();
+        };
+  };
+    function newminebarrel(canvas, x,width,height,shootChange, fov){
+    canvas.fillRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    };
+    canvas.fillRect(
+      (-width * 1.5) / 2 / fov + x / fov,
+      -(height - shootChange) * 0.67 / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) * 0.67 / fov
+    );
+     if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (-width * 1.5) / 2 / fov + x / fov,
+      -(height - shootChange) * 0.67 / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) * 0.67 / fov
+    );
+     };
+  };
+    function newminionbarrel(canvas, x,width,height,shootChange, fov){
+    canvas.fillRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width / 2) / fov,
+      -(height - shootChange) / fov,
+      width / fov,
+      (height - shootChange) / fov
+    );
+    };
+    canvas.fillRect(
+      (x - width * 0.75) / fov,
+      -(height - shootChange) / 1.5 / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) / 1.5 / fov
+    );
+    if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width * 0.75) / fov,
+      -(height - shootChange) / 1.5 / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) / 1.5 / fov
+    );
+    };
+    canvas.fillRect(
+      (x - width * 0.75) / fov,
+      -(height - shootChange) / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) / 5 / fov
+    );
+    if (document.getElementById('theme').value != 'simplistic') {
+    canvas.strokeRect(
+      (x - width * 0.75) / fov,
+      -(height - shootChange) / fov,
+      (width / fov) * 1.5,
+      (height - shootChange) / 5 /fov
+    );
+    };
+  };
+
     drawobjects = newdraw;
     drawPlayer = newdrawplayer;
+    drawBulletBarrel = newbulletbarrel; drawDroneBarrel = newdronebarrel; drawTrapBarrel = newtrapbarrel; drawMineBarrel = newminebarrel; drawMinionBarrel = newminionbarrel;
+
+    let pd = false;
+    const editloop = () => {
+        if (player.health <= 0.4 && !pd) {
+            if (autorespawn) {
+                document.getElementById('continue').click();
+                document.getElementById('play').click();
+            };
+            pd = true;
+        } else if (player.health >= 1) {
+            pd = false;
+        };
+        requestAnimationFrame(editloop);
+    };
+    editloop();
 })();
