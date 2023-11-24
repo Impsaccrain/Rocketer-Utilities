@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.2
+// @version      1.2.1
 // @description  Adds a lot new settings to the game https://rocketer.glitch.me/
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
@@ -149,7 +149,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.2 - 24 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.2.1 - 24 November 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
@@ -159,9 +159,7 @@
             rucp.appendChild(document.createElement('br'));
         };
     };
-    cct('- EDIT: White [CRGT] and Simplistic [CRGT] renamed to White and Simplistic', true);
-    cct('- FEATURE: Completely overhauled Simplistic theme', true);
-    cct('- FEATURE: Added auto-respawn option', true);
+    cct('- BUGFIX: Fixed the auto-respawn bug where it sometimes didn\'t work', false);
     rucspan.appendChild(rucp);
     changelogDisplayElement.appendChild(rucspan);
 
@@ -3834,13 +3832,13 @@
 
     let pd = false;
     const editloop = () => {
-        if (player.health <= 0.4 && !pd) {
+        if (player.health <= 1 && !pd && gameStart == -1) {
             if (autorespawn) {
                 document.getElementById('continue').click();
                 document.getElementById('play').click();
             };
             pd = true;
-        } else if (player.health >= 1) {
+        } else if (player.health > 1) {
             pd = false;
         };
         requestAnimationFrame(editloop);
