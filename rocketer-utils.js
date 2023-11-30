@@ -170,7 +170,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.3 - 25 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.3 - 30 November 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
