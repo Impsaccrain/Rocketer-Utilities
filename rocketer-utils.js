@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.3
 // @description  Adds a lot new settings to the game https://rocketer.glitch.me/
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
@@ -13,9 +13,25 @@
 (function() {
     'use strict';
 
+    localStorage.RocketerUtilities = localStorage.RocketerUtilities || JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.3 });
+
+    if (JSON.parse(localStorage.RocketerUtilities).version != 1.3) {
+        localStorage.RocketerUtilities = JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.3 });
+    };
+
+    const Utils = JSON.parse(localStorage.RocketerUtilities);
+    const Options = Utils.Options;
+
     var settings = document.getElementById('settingsPopup');
     var closesettingspopup = document.getElementById('closeSettingsPopup');
     var themes = document.getElementById('theme');
+    changetheme = function (selectObject) {
+        colortheme = selectObject.value;
+        let newutils = JSON.parse(localStorage.RocketerUtilities);
+        newutils.Options.Theme = document.getElementById('theme').selectedIndex;
+        newutils = JSON.stringify(newutils);
+        localStorage.RocketerUtilities = newutils;
+    }
     var playershape = 'circle';
 
     var whitetheme = document.createElement('option');
@@ -53,13 +69,18 @@
             chatinput.style.display = 'block';
         };
     };
-    var aurastate = true;
+
+    var aurastate = Options.AuraState == 1 ? true : false;
     function toggleAura() {
         aurastate = !aurastate
+        Options.AuraState = aurastate ? 1 : 0;
+        localStorage.RocketerUtilities = JSON.stringify(Utils);
     };
-    var autorespawn = false;
+    var autorespawn = Options.AutoRespawn == 1 ? true : false;
     function toggleAutoRespawn() {
         autorespawn = !autorespawn
+        Options.AutoRespawn = autorespawn ? 1 : 0;
+        localStorage.RocketerUtilities = JSON.stringify(Utils);
     };
 
     var chattoggle = document.createElement('label');
@@ -77,7 +98,7 @@
     auratoggle.className = 'switch';
     var ati = document.createElement('input');
     ati.type = 'checkbox';
-    ati.checked = false;
+    ati.checked = Options.AuraState == 1 ? false : true;
     ati.onclick = toggleAura;
     var ats = document.createElement('span');
     ats.className = 'slider round';
@@ -88,7 +109,7 @@
     respawntoggle.className = 'switch';
     var rti = document.createElement('input');
     rti.type = 'checkbox';
-    rti.checked = false;
+    rti.checked = Options.AutoRespawn == 1 ? true : false;
     rti.onclick = toggleAutoRespawn;
     var rts = document.createElement('span');
     rts.className = 'slider round';
@@ -149,7 +170,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.2.1 - 24 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.3 - 25 November 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
@@ -159,11 +180,13 @@
             rucp.appendChild(document.createElement('br'));
         };
     };
-    cct('- BUGFIX: Fixed the auto-respawn bug where it sometimes didn\'t work', false);
+    cct('- FEATURE: Now added settings auto-saving', false);
     rucspan.appendChild(rucp);
     changelogDisplayElement.appendChild(rucspan);
+    themes.selectedIndex = Options.Theme;
+    changetheme(themes);
 
-    }, 200);
+    }, 500);
 
     function newdrawplayer(canvas, object, fov, spawnProtect, playercolor, playeroutline, eternal, objectangle){//only barrels and body (no heath bars, names, and chats)
     const CRTP = document.getElementById('theme').value;
