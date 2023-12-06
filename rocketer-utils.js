@@ -1,22 +1,24 @@
 // ==UserScript==
 // @name         Rocketer Utilities
 // @namespace    http://tampermonkey.net/
-// @version      1.3
+// @version      1.4
 // @description  Adds a lot new settings to the game https://rocketer.glitch.me/
 // @author       DB423 (Impsaccrain)
 // @match        http*://rocketer.glitch.me/*
 // @icon         data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==
 // @grant        none
 // @license      DISTRIBUTION
+// @downloadURL https://update.greasyfork.org/scripts/478829/Rocketer%20Utilities.user.js
+// @updateURL https://update.greasyfork.org/scripts/478829/Rocketer%20Utilities.meta.js
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    localStorage.RocketerUtilities = localStorage.RocketerUtilities || JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.3 });
+    localStorage.RocketerUtilities = localStorage.RocketerUtilities || JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.4 });
 
-    if (JSON.parse(localStorage.RocketerUtilities).version != 1.3) {
-        localStorage.RocketerUtilities = JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.3 });
+    if (JSON.parse(localStorage.RocketerUtilities).version != 1.4) {
+        localStorage.RocketerUtilities = JSON.stringify({ Options: { AuraState: 1, AutoRespawn: 0, Theme: 0 }, version: 1.4 });
     };
 
     const Utils = JSON.parse(localStorage.RocketerUtilities);
@@ -170,7 +172,7 @@
     changelogDisplayElement.appendChild(document.createElement('br'));
     let rucspan = document.createElement('span');
     rucspan.id = 'rocketer-utils-changelog';
-    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.3 - 30 November 2023');
+    let ruc = document.createTextNode('ROCKETER UTILITIES CHANGELOG - 1.4 - 6 December 2023');
     rucspan.style.color = 'orange';
     rucspan.appendChild(ruc);
     let rucp = document.createElement('p');
@@ -180,7 +182,8 @@
             rucp.appendChild(document.createElement('br'));
         };
     };
-    cct('- FEATURE: Now added settings auto-saving', false);
+    cct('- BUGFIX: Fixed the chat doubling itself', true);
+    cct('- FEATURE: Added the smooth chat transitions (they didn\'t appear)', false)
     rucspan.appendChild(rucp);
     changelogDisplayElement.appendChild(rucspan);
     themes.selectedIndex = Options.Theme;
@@ -2868,11 +2871,12 @@
 
       //write chats
       if (chatstate) {
+//write chats
       if (id != playerstring) {
-        var firstChatY = 75;
+        var firstChatY = object.width / clientFovMultiplier /5*4 + 55 / clientFovMultiplier;
       }
       else{
-        var firstChatY = 20;//chat nearer to player body if no need to display name
+        var firstChatY = object.width / clientFovMultiplier /5*4;//chat nearer to player body if no need to display name
       }
       ctx.font = "700 25px Roboto";
       ctx.textAlign = "center";
@@ -2880,6 +2884,51 @@
       var xpadding = 15;
       var ypadding = 10;
       var lineheight = 30;
+
+      var timeWhenChatRemove = 200;//when change on server code, remember to change here too
+
+      if (!(chatlist[id])){//used for animating chat positions
+        chatlist[id] = JSON.parse(JSON.stringify(object.chats));
+      }
+      else{
+        let tempArray = [];
+        let messages = {};//prevent bug when multiple chats have same message
+        object.chats.forEach(function (item, index) {
+          let occurence = 0;//prevent bug when multiple chats have same message
+          let foundit = 0;
+          for (var i = 0; i < chatlist[id].length; i++) {//check if oldchats hae this message, to preserve the position for animation
+            if (chatlist[id][i].chat == item.chat){
+              if (messages[item.chat]){//saw a chat with the exact same message before!
+                if (messages[item.chat] <= occurence){//this is a different chat
+                  let k = JSON.parse(JSON.stringify(chatlist[id][i]));
+                  k.time = item.time;
+                  tempArray.push(k);
+                  messages[chatlist[id][i].chat]++;
+                  foundit = 1;
+                  break
+                }
+                else{//this is the same chat that you saw before, continue hunting for the chat
+                  occurence++;
+                }
+              }
+              else{
+                let k = JSON.parse(JSON.stringify(chatlist[id][i]));
+                k.time = item.time;
+                tempArray.push(k);
+                messages[chatlist[id][i].chat] = 1;
+                foundit = 1;
+                break
+              }
+            }
+          }
+          if (foundit == 0){//new chat message
+            let k = JSON.parse(JSON.stringify(item));
+            k.opacity = 0;
+            tempArray.push(k);
+          }
+        });
+        chatlist[id] = tempArray;
+      }
 
       object.chats.slice().reverse().forEach((chatObj, index) => {//slice and reverse to loop though array backwards (so older messages are above)
         ctx.fillStyle = "rgba(69,69,69,.7)";
@@ -2942,7 +2991,37 @@
         }
         var r = 15;
         var x = drawingX - longestLine / 2 - xpadding;
-        var y = drawingY - firstChatY - ypadding - 20 - h;
+        var y = drawingY - firstChatY - ypadding - h - 20;//the actual y location of this chat message
+        //aniamte towards this y position
+        //remember that the loop is reversed, so indexes are reversed here too
+        let thischat = chatlist[id][chatlist[id].length - 1 - index];
+        let diffpos = 0;
+        if (!thischat.y){
+          thischat.y = y;
+        }
+        else{
+          if (y > thischat.y){
+            thischat.y+=(y - thischat.y)/2*deltaTime;
+            if (y < thischat.y){
+              thischat.y = y;
+            }
+          }
+          else if (y < thischat.y){
+            thischat.y-=(thischat.y - y)/2*deltaTime;
+            if (y > thischat.y){
+              thischat.y = y;
+            }
+          }
+          if (Math.abs(y - thischat.y)<0.1){//small difference between current position and actual position
+            thischat.y = y;
+          }
+          diffpos = y - thischat.y;
+          y = thischat.y;
+        }
+        if (thischat.opacity < 1){
+          thischat.opacity+=0.1;
+        }
+        ctx.globalAlpha = thischat.opacity;
         ctx.beginPath();
         ctx.moveTo(x + r, y);
         ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -2964,8 +3043,9 @@
         //write words
         ctx.fillStyle = "white";
         wrappedText.forEach(function(item) {
-            ctx.fillText(item[0], item[1], item[2]-h);//write text
+            ctx.fillText(item[0], item[1], item[2]-h-diffpos);//write text
         })
+        ctx.globalAlpha = 1.0;
         firstChatY += (h + 10); //height of chat plus space between chats
       });
       ctx.lineJoin = "miter"; //change it back
